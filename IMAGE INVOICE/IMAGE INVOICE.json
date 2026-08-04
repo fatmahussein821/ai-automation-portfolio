@@ -1,0 +1,320 @@
+{
+  "name": "IMAGE INVOICE",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f566ec60-cc8e-42fd-88c3-6575d56f001b",
+      "name": "Telegram Trigger",
+      "webhookId": "d3e045a5-4730-41a2-a2f0-d0f46c7c6c76",
+      "credentials": {
+        "telegramApi": {
+          "id": "oDwjAMSrgSY42Eto",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=What's in this image?",
+        "options": {
+          "systemMessage": "=You are an expert AI data extraction agent. Your task is to analyze the provided invoice image and extract specific information into a structured JSON format.\n\nStrictly adhere to the following schema. Each feature/key must be a maximum of two words:\n\n{\n  \"invoice_id\": \"string or null\",\n  \"customer\": \"string or null\",\n  \"email\": \"string or null\",\n  \"amount\": \"number or null\",\n  \"issue_date\": \"string (YYYY-MM-DD) or null\",\n  \"due_date\": \"string (YYYY-MM-DD) or null\",\n  \"status\": \"string or null\"\n}\n\nRules:\n1. Return ONLY the raw JSON object. Do not include markdown formatting like ```json ... ```, or any introductory/explanatory text.\n2. If a field cannot be found in the image, set its value to null.\n3. Maintain high precision with names, emails, and dates.",
+          "passthroughBinaryImages": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        512,
+        0
+      ],
+      "id": "7e42fa01-cd8b-4a17-8913-b6ecd2884ae8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[2].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        0
+      ],
+      "id": "0755be8a-2c76-4820-94c5-e29d00d12989",
+      "name": "Get a file",
+      "webhookId": "a6d12c0a-842c-472c-bf49-dd1345e53c04",
+      "credentials": {
+        "telegramApi": {
+          "id": "oDwjAMSrgSY42Eto",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appKvUP3ZR9QJH49L",
+          "mode": "list",
+          "cachedResultName": "فواتير",
+          "cachedResultUrl": "https://airtable.com/appKvUP3ZR9QJH49L"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblnLrjz1IJ8ZMh3O",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://airtable.com/appKvUP3ZR9QJH49L/tblnLrjz1IJ8ZMh3O"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Amount": "={{ $json.amount }}",
+            "InvoiceID": "={{ $json.invoice_number }}",
+            "Customer": "={{ $json.name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "InvoiceID",
+              "displayName": "InvoiceID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Customer",
+              "displayName": "Customer",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "IssueDate",
+              "displayName": "IssueDate",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "DueDate",
+              "displayName": "DueDate",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Unpaid",
+                  "value": "Unpaid"
+                },
+                {
+                  "name": "Paid",
+                  "value": "Paid"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "LastReminderSent",
+              "displayName": "LastReminderSent",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1136,
+        0
+      ],
+      "id": "6ca627f5-5514-44ed-aa1b-4e4248af1c82",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "ZYKwRjFEPKtroazi",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiText = $input.first().json.output || $input.first().json.text || \"\";\n\nconst result = {\n  name: \"\",\n  email: \"\",\n  phone: \"\",\n  invoice_number: \"\",\n  amount: \"\",\n  currency: \"\",\n  date: \"\",\n  due_date: \"\",\n  description: \"\",\n  address: \"\",\n  company: \"\",\n  original_text: aiText\n};\n\n// دالة مساعدة لاستخراج القيمة\nfunction extract(fieldNames) {\n  for (const name of fieldNames) {\n    // بيجيب اللي بعد Found as \"....\"\n    const regex1 = new RegExp(`\\\\*\\\\*${name}\\\\*\\\\*[\\\\s\\\\S]*?Found as\\\\s*\"([^\"]+)\"`, \"i\");\n    const match1 = aiText.match(regex1);\n    if (match1) return match1[1].trim();\n\n    // لو مكتوب Not present\n    const regex2 = new RegExp(`\\\\*\\\\*${name}\\\\*\\\\*[\\\\s\\\\S]*?Not present`, \"i\");\n    if (aiText.match(regex2)) return \"\";\n\n    // طريقة تانية أبسط\n    const regex3 = new RegExp(`\\\\*\\\\*${name}\\\\*\\\\*[\\\\s\\\\:]*([^\\\\n*]+)`, \"i\");\n    const match3 = aiText.match(regex3);\n    if (match3) {\n      let val = match3[1].replace(/Found as/i, \"\").replace(/\"/g, \"\").trim();\n      if (val && !val.toLowerCase().includes(\"not present\")) return val;\n    }\n  }\n  return \"\";\n}\n\n// استخراج الحقول\nresult.invoice_number = extract([\"invoice_id\", \"invoice number\", \"invoice\", \"رقم الفاتورة\"]);\nresult.name           = extract([\"customer\", \"name\", \"اسم المشترك\", \"العميل\"]);\nresult.email          = extract([\"email\", \"ايميل\", \"البريد\"]);\nresult.phone          = extract([\"phone\", \"موبايل\", \"تليفون\", \"رقم\"]);\nresult.amount         = extract([\"amount\", \"total\", \"الإجمالي\", \"المبلغ\", \"المستحق\"]);\nresult.currency       = extract([\"currency\", \"عملة\"]);\nresult.date           = extract([\"issue_date\", \"date\", \"تاريخ\", \"تاريخ الإصدار\"]);\nresult.due_date       = extract([\"due_date\", \"due date\", \"تاريخ الاستحقاق\"]);\nresult.description    = extract([\"description\", \"وصف\", \"البيان\"]);\nresult.address        = extract([\"address\", \"عنوان\"]);\nresult.company        = extract([\"company\", \"شركة\"]);\n\n// تنظيف المبلغ من أي حروف زيادة\nif (result.amount) {\n  result.amount = result.amount.replace(/[^\\d.]/g, \"\");\n}\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        0
+      ],
+      "id": "e4cf02a1-6df8-4244-b0ae-73eba5d8b1d3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3.6-27b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        480,
+        224
+      ],
+      "id": "47f29d4a-6bd6-49e6-9267-ab1da1b2eb1e",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "M26815oG89MP5EKe",
+          "name": "Groq account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0bba020f-a828-47aa-b96f-955882d1d4f5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f53a7d353eb7e5751814be14cb9892b7d6cd6bed498fa68fe9b5279f3f77d14e"
+  },
+  "nodeGroups": [],
+  "id": "RV5A1ogUAxxdu4wF",
+  "tags": []
+}
