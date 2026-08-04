@@ -1,6 +1,5 @@
 ![IMAGE INVOICE Workflow](workflow.png)
 
-##IMAGE INVOICE
 
 ## Overview
 
