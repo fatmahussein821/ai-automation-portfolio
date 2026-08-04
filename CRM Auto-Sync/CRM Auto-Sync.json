@@ -1,0 +1,272 @@
+{
+  "name": "CRM Auto-Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "CRM ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "phone number ",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "date of birth",
+              "fieldType": "date",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "c174dd6d-c644-45af-9563-2fbce7a52575",
+      "name": "On form submission",
+      "webhookId": "8af79333-ae26-477e-90fb-ea8705a9007f"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1GwbnA2GP-Wf3QMtfyIEzUUmpUXxVaF5YwEMMBWiV8Bs",
+          "mode": "list",
+          "cachedResultName": "CRM ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GwbnA2GP-Wf3QMtfyIEzUUmpUXxVaF5YwEMMBWiV8Bs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GwbnA2GP-Wf3QMtfyIEzUUmpUXxVaF5YwEMMBWiV8Bs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.Name }}",
+            "email": "={{ $json.email }}",
+            "phone number": "={{ $json['phone number '] }}",
+            "date of birth": "={{ $json['date of birth'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone number",
+              "displayName": "phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date of birth",
+              "displayName": "date of birth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        0
+      ],
+      "id": "7db46d43-9964-4122-bce0-16284f7533e2",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KYZWcztfyPKUb5Pp",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b8402b71-54e1-4615-b253-7fb4c4737ab8",
+              "leftValue": "={{ $json.Name }}",
+              "rightValue": "fatma hussein",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "5ef9ba6a-eebc-40eb-bcde-c508f502455b",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "fatmahussein5057@gmail.com",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "92baf487-bf3a-42f6-a68a-4c9c18200f68",
+              "leftValue": "={{ $json['phone number '] }}",
+              "rightValue": " 01285057654",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "25b6b432-39ab-425a-b44a-a2d1e435e710",
+              "leftValue": "={{ $json['date of birth'] }}",
+              "rightValue": "2026-08-01T14:43:18",
+              "operator": {
+                "type": "dateTime",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -192,
+        0
+      ],
+      "id": "bba467e9-3da0-4f71-9909-e6bfbebc7d3a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.email }}",
+        "subject": "Your Submission Has Been Successfully Received",
+        "emailType": "text",
+        "message": "=Dear {{ $json.name }} ,\nThank you for taking the time to fill out the form.\nWe are pleased to confirm that your submission has been successfully received and processed.\nIf you have any questions or need further assistance, please don’t hesitate to reach out.\nBest regards",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "e4338b75-4b01-431c-b4ed-0baa7ab6d35a",
+      "name": "Send a message",
+      "webhookId": "11daab07-b9a4-4fd0-99aa-df65407f738c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dDDz1HZK0fLiSbUD",
+          "name": "Gmail account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "d26fdad3-cdb7-4b5c-9e6f-e5fc9d0220a2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f53a7d353eb7e5751814be14cb9892b7d6cd6bed498fa68fe9b5279f3f77d14e"
+  },
+  "nodeGroups": [],
+  "id": "OsWqNLqYt3oHdRj5",
+  "tags": []
+}
