@@ -5,15 +5,23 @@ An automated invoice reminder workflow built with n8n. The workflow checks invoi
 
 ## Features
 
-Checks invoice records automatically.
-Calculates remaining days until the due date.
-Identifies unpaid invoices due within 5 days.
-Generates a personalized payment reminder.
-Sends invoice reminders via Gmail.
+-Checks invoice records automatically.
+
+-Calculates remaining days until the due date.
+
+-Identifies unpaid invoices due within 5 days.
+
+-Generates a personalized payment reminder.
+
+-Sends invoice reminders via Gmail.
+
 
 ## Tech Stack
 
-n8n
-Airtable
-Gmail
-JavaScript
+-n8n
+
+-Airtable
+
+-Gmail
+
+-JavaScript
