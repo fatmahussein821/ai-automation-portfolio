@@ -1,0 +1,199 @@
+{
+  "name": "INVOICE",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -624,
+        -48
+      ],
+      "id": "1fa54dc8-e7d0-4b2b-af84-58eea84715a2",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appKvUP3ZR9QJH49L",
+          "mode": "list",
+          "cachedResultName": "فواتير",
+          "cachedResultUrl": "https://airtable.com/appKvUP3ZR9QJH49L"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblnLrjz1IJ8ZMh3O",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://airtable.com/appKvUP3ZR9QJH49L/tblnLrjz1IJ8ZMh3O"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -416,
+        -48
+      ],
+      "id": "09cab746-8352-4f9f-9e58-c995f49dddf0",
+      "name": "Search records",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "ZYKwRjFEPKtroazi",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const record = item.json;\n  const fields = record.fields;\n  \n  const today = DateTime.now();\n  const dueDate = DateTime.fromISO(fields.DueDate);\n  const daysLeft = Math.ceil(dueDate.diff(today, 'days').days);\n  \n  let dueMessage;\n  if (daysLeft > 0) {\n    dueMessage = `خلال ${daysLeft} يوم`;\n  } else if (daysLeft === 0) {\n    dueMessage = `اليوم`;\n  } else {\n    dueMessage = `متأخرة منذ ${Math.abs(daysLeft)} يوم`;\n  }\n  \n  return {\n    json: {\n      id: record.id,\n      InvoiceID: fields.InvoiceID,\n      Customer: fields.Customer,\n      Email: fields.Email,\n      Amount: fields.Amount,\n      Status: fields.Status,\n      DueDate: fields.DueDate,\n      DueDateFormatted: dueDate.toFormat('dd-MM-yyyy'),\n      daysLeft: daysLeft,\n      dueMessage: dueMessage\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -48
+      ],
+      "id": "df41a44b-e981-4ce4-8abd-2e4a23fe1871",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fd1da525-3550-487c-84fe-25597590878a",
+              "leftValue": "={{ $json.daysLeft }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "b6668fc5-7761-48d1-b262-1c96a4444c82",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "=Unpaid",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        -48
+      ],
+      "id": "0b14af42-17f2-435d-b186-ad78d5f1947a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "fatmahussein5057@gmail.com",
+        "subject": "=تذكير بفاتورتك المستحقة  {{ $json.dueMessage }}",
+        "emailType": "text",
+        "message": "=مرحبا {{ $json.Customer }}\nجنية {{ $json.Amount }} نود تذكيرك بان فاتورتك المستحقة بقيمة\nالمستحقة بتاريخ {{ $json.DueDateFormatted }}\nبرجاء السداد في اقرب وقت ممكن.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        -144
+      ],
+      "id": "8bc43123-e1b1-40b3-ade9-15b860f08c7c",
+      "name": "Send a message",
+      "webhookId": "e2fa18d4-d09e-4438-a476-e761cb7b14b8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dDDz1HZK0fLiSbUD",
+          "name": "Gmail account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "87d273ef-29d7-4e6c-8d1c-da858f9b175d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f53a7d353eb7e5751814be14cb9892b7d6cd6bed498fa68fe9b5279f3f77d14e"
+  },
+  "nodeGroups": [],
+  "id": "WJq2eyC4qlCpCsh8",
+  "tags": []
+}
