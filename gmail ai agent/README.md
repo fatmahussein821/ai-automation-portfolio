@@ -1,7 +1,6 @@
 ![gmail ai agent Workflow](workflow.png)
 # Gmail AI Agent
 
-# Gmail AI Agent
 
 ## Overview
 An AI-powered email automation workflow built with **n8n**. The workflow monitors incoming Gmail messages, classifies them into predefined categories, applies the appropriate Gmail label, and generates a professional AI reply in the same language as the original email.
