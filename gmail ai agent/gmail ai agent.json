@@ -1,0 +1,451 @@
+{
+  "name": "gmail ai agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -416,
+        -128
+      ],
+      "id": "7a03b77e-a6d9-48f6-a629-b778ba4d600c",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dDDz1HZK0fLiSbUD",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "customer service",
+              "description": "support, customer service, help desk, ticket, case #, inquiry, complaint, assistance, how can I help, your request, service request, CS, customer care, resolution, escalate, agent, chat support , access my account "
+            },
+            {
+              "category": "finance/billing",
+              "description": "invoice, bill, billing, payment, receipt, statement, account balance, overdue, charge, refund, transaction, credit card, bank transfer, wire, payment confirmation, invoice #, amount due, subscription fee, tax invoice"
+            },
+            {
+              "category": "high priority ",
+              "description": "urgent, ASAP, immediate, priority, critical, important, action required, time-sensitive, deadline, escalate, emergency, high priority, please respond, response needed, attention required"
+            },
+            {
+              "category": "promotion",
+              "description": "offer, discount, sale, promo, promotion, deal, coupon, free shipping, limited time, special offer, % off, save now, exclusive, newsletter, unsubscribe, marketing, campaign, flash sale"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -208,
+        -128
+      ],
+      "id": "dc69d607-f76f-4639-8e14-bd1595bd5ebf",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        96
+      ],
+      "id": "30ae35fe-b9fc-4474-99a1-c9ddb38c603e",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "M26815oG89MP5EKe",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_6922186666971790407"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        -352
+      ],
+      "id": "3953282b-8de3-41cb-a00d-c00871334543",
+      "name": "Add label to message",
+      "webhookId": "23bccf26-6d10-4195-a9b6-62a3f6be2431",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dDDz1HZK0fLiSbUD",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_7591104560940029828"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        -192
+      ],
+      "id": "0f6871f7-6a26-4ef3-8bd9-cdc3f67ed220",
+      "name": "Add label to message1",
+      "webhookId": "e5d6722f-0fa4-4cef-b716-719a1e641476",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dDDz1HZK0fLiSbUD",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_4629458585117950198"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        -48
+      ],
+      "id": "549e0d2f-2aa6-47ad-b6f0-539349096a8b",
+      "name": "Add label to message2",
+      "webhookId": "db29b9c9-e11b-4c6a-87f6-01e103fc122b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dDDz1HZK0fLiSbUD",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_8021206144899816106"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        80
+      ],
+      "id": "5cae3ce9-6184-48ce-a9bb-8b76087978d1",
+      "name": "Add label to message3",
+      "webhookId": "f70faefe-21d2-4929-9814-be143d3cf53b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dDDz1HZK0fLiSbUD",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Gmail Trigger').item.json.text }}",
+        "options": {
+          "systemMessage": "=You are a professional email assistant. Your task is to write a polite, clear, and professional reply to the incoming email.\n\nFollow these rules strictly based on the label:\n\n1. If the label is \"customer service\":\n   - Be helpful, empathetic, and solution-oriented.\n   - Acknowledge the customer's issue.\n   - Offer clear next steps or ask for more details if needed.\n   - Keep a friendly and supportive tone.\n\n2. If the label is \"finance/billing\":\n   - Be precise, formal, and professional.\n   - Focus on numbers, invoices, payments, or billing details.\n   - Avoid emotional language.\n   - Confirm any amounts or request missing information clearly.\n\n3. If the label is \"high priority\":\n   - Respond quickly and seriously.\n   - Show urgency and importance.\n   - Keep the reply short and direct.\n   - Offer immediate action or escalation if needed.\n\n4. If the label is \"promotion\":\n   - Do NOT reply to promotional emails.\n   \n\nGeneral rules:\n- Always reply in the same language as the original email (English or Arabic).\n- Keep the reply concise (maximum 150 words).\n- Do not invent information that is not in the email.\n- Sign the email as: \"Best regards, Customer Support Team\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        -144
+      ],
+      "id": "63ffe261-c23b-447e-a1cd-6b4aca744e5b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        448,
+        32
+      ],
+      "id": "23800172-4201-4ab0-bed3-7bf929727aa8",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "M26815oG89MP5EKe",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -144
+      ],
+      "id": "9c036dde-09b1-4876-aa97-ea95e829221b",
+      "name": "Reply to a message",
+      "webhookId": "93cae120-7c61-4600-bcec-6223918f034a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dDDz1HZK0fLiSbUD",
+          "name": "Gmail account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Gmail Trigger": [
+      {
+        "json": {
+          "id": "19f992f40cc80a9c",
+          "threadId": "19f992f40cc80a9c",
+          "labelIds": [
+            "UNREAD",
+            "IMPORTANT",
+            "CATEGORY_PERSONAL",
+            "INBOX"
+          ],
+          "sizeEstimate": 8411,
+          "headers": {
+            "delivered-to": "Delivered-To: fatmahussein5057@gmail.com",
+            "received": "Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])\r\n        by mx.google.com with SMTPS id ada2fe7eead31-75033a6654bsor131765137.1.2026.07.25.05.10.38\r\n        for <fatmahussein5057@gmail.com>\r\n        (Google Transport Security);\r\n        Sat, 25 Jul 2026 05:10:38 -0700 (PDT)",
+            "x-received": "X-Received: by 2002:a05:6102:4190:b0:631:28c1:154c with SMTP id\r\n ada2fe7eead31-7503e76ef85mr1350132137.9.1784981438140; Sat, 25 Jul 2026\r\n 05:10:38 -0700 (PDT)",
+            "arc-seal": "ARC-Seal: i=1; a=rsa-sha256; t=1784981438; cv=none;\r\n        d=google.com; s=arc-20260327;\r\n        b=U2RI1GLDw7Rc4RhgUR4q9Waob3+JVFSCfiXRqfT7xAW2ZrLZMBA0T2JGQR7sRWDUs8\r\n         KhuSvJVyaj0f8vLIxuZlGdIRVsdU1Wmef9WTANSRQh40DiBMVX6sdBUubCO35zVWcu+1\r\n         6fQD3fw4E1oZXJL8uyYkCN1uxQusMps/xt5jQueSh2AB8nIG0tbdEcVc7c7joj67URta\r\n         lV0GoEyxm9EzQSSqUNieeNICv7LbMbOlWeGIGdvAEtU4gN6W8JhfmKxj10ORUYVdTFGs\r\n         8jkiTd6Aklotw481ZzxMD+tfVNniFpx6b4ID1vtPK1U6Kp2SrYqUh+dNImoVdro3gJNn\r\n         gBBw==",
+            "arc-message-signature": "ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;\r\n        h=to:subject:message-id:date:from:mime-version:dkim-signature;\r\n        bh=jq9Ths99tuW3AID10kklbuo46kSQOfr6Tc/pK9a9jk4=;\r\n        fh=hr5ymY5MJxyH+kFHOGYRVnbSooWjPm5INXArYiKTbOM=;\r\n        b=UVmIqOCHGzXnUl3q0pfAqk60hunJVeQCaG/CQ1eCNxgb+RMeI9bCE0VOLbpX9Z1MbC\r\n         3L2t8orblde5VBN75pUSRSqunHVBbz+9JTOhjQ9FPTf8oGTlgvwYc9uyM9D9IF7ZwmHp\r\n         qRSdxql8/+btkXUijqdWkc6fftYZL+yMFKOYc+nWuEAYciGH1cGU2ZdrDfBpP5NcpN1m\r\n         9nEjz6PbY9m9lpRiHlgzkEZmEv8ZohM2t3PqxGgun6ZFUalwDepOqVZUe7KmLrDYoGNK\r\n         py6Cz8L0Jf/0OrSGl+7MoL1JXb8L8mLc7CDnuQP1DDUN2SqXb/FATd8/p2SbVZJKqCDu\r\n         y3Kw==;\r\n        dara=google.com",
+            "arc-authentication-results": "ARC-Authentication-Results: i=1; mx.google.com; arc=none",
+            "return-path": "Return-Path: <fatmahuss678@gmail.com>",
+            "received-spf": "Received-SPF: pass (google.com: domain of fatmahuss678@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;",
+            "authentication-results": "Authentication-Results: mx.google.com;\r\n       dkim=pass header.i=@gmail.com header.s=20251104 header.b=CDekJgHJ;\r\n       arc=pass (i=1);\r\n       spf=pass (google.com: domain of fatmahuss678@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=fatmahuss678@gmail.com;\r\n       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;\r\n       dara=pass header.i=@gmail.com",
+            "dkim-signature": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=gmail.com; s=20251104; t=1784981438; x=1785586238; dara=google.com;\r\n        h=content-type:to:subject:message-id:date:from:mime-version:from:to\r\n         :cc:subject:date:message-id:reply-to:content-type;\r\n        bh=jq9Ths99tuW3AID10kklbuo46kSQOfr6Tc/pK9a9jk4=;\r\n        b=CDekJgHJcyUIZYOvVZKbkX9BYEGJA5jS3cL30LJ8zg5N6WaK1AwrOcf5XSx0i8xPfV\r\n         Soy6qj4xxvdaU4PiG55p5GpliZbSdUNBiu0YHALxQN3rDDjOa1bGQ2BAQl+vkkXlhmKf\r\n         dFMjvrpkJBydUQZo/qzYy25eoISf511wi2Ju5ILUMDPN1vK0Io8D7m0nW/1rSAqzxiu1\r\n         vH/nEyBB9rbeAiJVPUi54koCZZPcf9M9kuDNHYICNBym7p+aWRwYZofTBB+vegskAr8U\r\n         pG88CGmC7GTJ02Z+gV7PhNqCxLGQLIJPpYAkpjeg6g8IfEIc3Jth25jw4+jqQWL5iLm3\r\n         z/zQ==",
+            "x-google-dkim-signature": "X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=1e100.net; s=20251104; t=1784981438; x=1785586238;\r\n        h=content-type:to:subject:message-id:date:from:mime-version:x-gm-gg\r\n         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to\r\n         :content-type;\r\n        bh=jq9Ths99tuW3AID10kklbuo46kSQOfr6Tc/pK9a9jk4=;\r\n        b=E/KRFTL7TYmJ3hr1dK/C6mqGE+D+xE//QwCEq0UrLftL/V1epV0O8TTleFSHrTJETu\r\n         m3kV04lDbM9xG3Wm8jr2gpy5l6YY/xx3L8OP0Kacqy0MyB2XHBjDKeFr33dzN053Mug4\r\n         25+tqfBqO6qwNDevXHbbemKPGPRKoo9JA2foVA4DjFA/UBc02tkAUN6PYDyEGUj0bORm\r\n         BZMFUgckvNYZ0Y/RXLN+/9t28PbC1t4wCFF9kWgQzXuHgvkO1JAVUGPMgZyHUmH+9IQb\r\n         lDPdxI2IKeykMULT93SYH63Q6ppraNykooAqf4N8B+u5RqBgqyNbYVBZuiFKAQFixRph\r\n         r8AA==",
+            "x-gm-message-state": "X-Gm-Message-State: AOJu0Yw67oh8ROiu4+3/7i/zkeUVzZeAFlWG8Qfyv8gFceouryo4oaH7\r\n\t0dk8NGTZOyWmxhjuzZNSK1alntq38UDSsI9OcsQngUMfWIBs4NI3RuKAUxxeS4k6qPxy1CDA30I\r\n\tX2aVhk6kz++tMDZBqytVsbZHqiGLG+Ee04nQ6",
+            "x-gm-gg": "X-Gm-Gg: AR+sD11MNN5Lv5DnsQzOQNOdx3b0dsan4K7RwDaA3EY0ieOTEkumnUOtWbYLI4MKXLS\r\n\t5/UAXR6jb+/GAqazXJFi8n0B1Z4EDhQPhc1wuwRUF8Yu4/eEdd0UfDDl3sqIPSSD+ZpnwSIcrFh\r\n\tU+l7LpnAADGFP3i4CLjexuy0yEz5DoTMrowW/dMJxV5fxp9fGpV6JOtYMLFl3/rEULJjWTVARTJ\r\n\tkRaE8MkQPNMKEaUKxcVjKvj5j6WkYrFhbE4c4YlQaZNUHgsk1GC+M+jUgs=",
+            "mime-version": "MIME-Version: 1.0",
+            "from": "From: Fatma Hussein <fatmahuss678@gmail.com>",
+            "date": "Date: Sat, 25 Jul 2026 15:10:27 +0300",
+            "x-gm-features": "X-Gm-Features: AUfX_mxaaOoF5PVMMgWhGOc-xq9aKdVhOwM1pOUZRgbXyq_nzLJqPVYcryCfZjM",
+            "message-id": "Message-ID: <CAMcLL5+0FcjkyQ6yHd5MEokCS3bQ1t8OaNGX83mRadAEdNNNxg@mail.gmail.com>",
+            "subject": "Subject: Support Request - Unable to Access My Account (Ticket Inquiry)",
+            "to": "To: fatmahussein5057@gmail.com",
+            "content-type": "Content-Type: multipart/alternative; boundary=\"0000000000008d4de006576e6020\""
+          },
+          "html": "<div dir=\"ltr\"><p dir=\"auto\" style=\"white-space:pre-wrap\">Hi Customer Service Team,</p>\n<p dir=\"auto\" style=\"white-space:pre-wrap\">I’ve been trying to access my account since yesterday but keep getting an “Invalid credentials” error, even though I’m sure my password is correct.</p>\n<p dir=\"auto\" style=\"white-space:pre-wrap\">Could you please help me reset it or investigate what’s going on?\nI would appreciate your assistance with this issue as soon as possible.</p>\n<p dir=\"auto\" style=\"white-space:pre-wrap\">This is a service request / support inquiry.\nPlease let me know if you need any more details from my side.</p>\n<p dir=\"auto\" style=\"white-space:pre-wrap\">Thank you for your help.</p>\n<p dir=\"auto\" style=\"white-space:pre-wrap\">Best regards,\nMark</p></div>\n",
+          "text": "Hi Customer Service Team,\n\nI’ve been trying to access my account since yesterday but keep getting an\n“Invalid credentials” error, even though I’m sure my password is correct.\n\nCould you please help me reset it or investigate what’s going on? I would\nappreciate your assistance with this issue as soon as possible.\n\nThis is a service request / support inquiry. Please let me know if you need\nany more details from my side.\n\nThank you for your help.\n\nBest regards, Mark\n",
+          "textAsHtml": "<p>Hi Customer Service Team,</p><p>I&rsquo;ve been trying to access my account since yesterday but keep getting an<br/>&ldquo;Invalid credentials&rdquo; error, even though I&rsquo;m sure my password is correct.</p><p>Could you please help me reset it or investigate what&rsquo;s going on? I would<br/>appreciate your assistance with this issue as soon as possible.</p><p>This is a service request / support inquiry. Please let me know if you need<br/>any more details from my side.</p><p>Thank you for your help.</p><p>Best regards, Mark</p>",
+          "subject": "Support Request - Unable to Access My Account (Ticket Inquiry)",
+          "date": "2026-07-25T12:10:27.000Z",
+          "to": {
+            "value": [
+              {
+                "address": "fatmahussein5057@gmail.com",
+                "name": ""
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><a href=\"mailto:fatmahussein5057@gmail.com\" class=\"mp_address_email\">fatmahussein5057@gmail.com</a></span>",
+            "text": "fatmahussein5057@gmail.com"
+          },
+          "from": {
+            "value": [
+              {
+                "address": "fatmahuss678@gmail.com",
+                "name": "Fatma Hussein"
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Fatma Hussein</span> &lt;<a href=\"mailto:fatmahuss678@gmail.com\" class=\"mp_address_email\">fatmahuss678@gmail.com</a>&gt;</span>",
+            "text": "\"Fatma Hussein\" <fatmahuss678@gmail.com>"
+          },
+          "messageId": "<CAMcLL5+0FcjkyQ6yHd5MEokCS3bQ1t8OaNGX83mRadAEdNNNxg@mail.gmail.com>"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message3": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "dd328802-723e-4930-874f-68ca9888fd01",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f53a7d353eb7e5751814be14cb9892b7d6cd6bed498fa68fe9b5279f3f77d14e"
+  },
+  "nodeGroups": [],
+  "id": "BWFhAHY8MgteEEn3",
+  "tags": []
+}
