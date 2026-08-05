@@ -1,0 +1,374 @@
+{
+  "name": "scrape cairo restaurant",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -544,
+        0
+      ],
+      "id": "787fe209-7bad-4bff-9118-a579402a524b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/actors/lukaskrivka~google-maps-with-contact-details/runs?token"_",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"searchStringsArray\": [\n    \"restaurant\",\n    \"مطعم\",\n    \"كافيه\",\n    \"cafe\"\n  ],\n  \"locationQuery\": \"Cairo, Egypt\",\n  \"maxCrawledPlacesPerSearch\": 10,\n  \"language\": \"en\",\n  \"skipClosedPlaces\": false,\n  \"proxyConfiguration\": {\n    \"useApifyProxy\": true\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -336,
+        -16
+      ],
+      "id": "15672e61-9ddf-4429-9110-8446be2050e5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "486cc922-78cd-43de-9baa-70540e26c9f2",
+      "name": "Wait",
+      "webhookId": "8509d44f-3852-4166-a8f0-aa237680d31d"
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/actors/lukaskrivka~google-maps-with-contact-details/runs/last/dataset/items?token"_",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        80,
+        0
+      ],
+      "id": "2f82d819-7b65-48fc-9e31-ca2dbcd8c7f8",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst cleaned = [];\n\nfor (const item of items) {\n  const data = item.json;\n  if (!data) continue;\n\n  const phone = data.phone || data.phoneUnformatted;\n\n  // لو مفيش رقم تليفون، عدّي المكان ده ومتضيفهوش\n  if (!phone) continue;\n\n  cleaned.push({\n    \"Place name\": data.title || data.name || null,\n    \"Category name\": data.categoryName || data.category || null,\n    \"total Score\": data.totalScore || data.total_score || data.rating || null,\n    \"Count reviews\": data.reviewsCount || data.reviews_count || data.reviewCount || null,\n    \"Street\": data.street || null,\n    \"city\": data.city || null,\n    \"Phone\": `'${phone}`,\n    \"URL\": data.url || data.mapsUrl || null\n  });\n}\n\nreturn cleaned.map(row => ({ json: row }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        0
+      ],
+      "id": "def798ed-8aec-4803-ac60-897c52e6e417",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1JhrM-abKTz9EFydS2h58iabjIiljq0aDeEiGUdIp8hE",
+          "mode": "list",
+          "cachedResultName": "cairo restaurant",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JhrM-abKTz9EFydS2h58iabjIiljq0aDeEiGUdIp8hE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 755906285,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JhrM-abKTz9EFydS2h58iabjIiljq0aDeEiGUdIp8hE/edit#gid=755906285"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        512,
+        0
+      ],
+      "id": "e2396706-6e39-49e3-ab0f-835bee3e176d",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KYZWcztfyPKUb5Pp",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// New cleaned data\nconst newItems = $('Code in JavaScript').all().map(item => item.json);\n\n// Old data from Google Sheets\nconst existingItems = $('Get row(s) in sheet').all().map(item => item.json);\n\n// Create keys from existing data\nconst existingKeys = new Set();\nfor (const item of existingItems) {\n  const name = (item[\"Company Name\"] || item[\"Place name\"] || \"\").toLowerCase().trim();\n  const phone = (item[\"Phone\"] || \"\").toLowerCase().trim();\n  existingKeys.add(`${name}|${phone}`);\n}\n\n// Filter only new ones\nconst uniqueNew = [];\nfor (const item of newItems) {\n  const name = (item[\"Place name\"] || \"\").toLowerCase().trim();\n  const phone = (item[\"Phone\"] || \"\").toLowerCase().trim();\n  const key = `${name}|${phone}`;\n\n  if (name && !existingKeys.has(key)) {\n    uniqueNew.push(item);\n    existingKeys.add(key); // prevent duplicates inside the new batch too\n  }\n}\n\nreturn uniqueNew.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        0
+      ],
+      "id": "f1e0a371-7fa9-4236-b6ec-73f63af67290",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1JhrM-abKTz9EFydS2h58iabjIiljq0aDeEiGUdIp8hE",
+          "mode": "list",
+          "cachedResultName": "cairo restaurant",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JhrM-abKTz9EFydS2h58iabjIiljq0aDeEiGUdIp8hE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 755906285,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JhrM-abKTz9EFydS2h58iabjIiljq0aDeEiGUdIp8hE/edit#gid=755906285"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "restaurant name": "={{ $json['Place name'] }}",
+            "phone": "={{ $json.Phone }}",
+            "totalScore": "={{ $json['total Score'] }}",
+            "reviewsCount": "={{ $json['Count reviews'] }}",
+            "street": "={{ $json.Street }}",
+            "city": "={{ $json.city }}",
+            "url": "={{ $json.URL }}",
+            "categoryName": "={{ $json['Category name'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "restaurant name",
+              "displayName": "restaurant name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "categoryName",
+              "displayName": "categoryName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "totalScore",
+              "displayName": "totalScore",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reviewsCount",
+              "displayName": "reviewsCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "street",
+              "displayName": "street",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        944,
+        0
+      ],
+      "id": "ab39f40d-bb37-495e-823a-ffc2b89179a5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KYZWcztfyPKUb5Pp",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9d8f7c59-5fd8-4957-9044-d40788cda018",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f53a7d353eb7e5751814be14cb9892b7d6cd6bed498fa68fe9b5279f3f77d14e"
+  },
+  "nodeGroups": [],
+  "id": "YyCMyGgcbrZayq17",
+  "tags": []
+}
