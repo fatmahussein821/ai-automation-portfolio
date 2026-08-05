@@ -3,7 +3,7 @@
 # Cairo Restaurant Scraper
 
 ## Overview
-An automated data collection workflow built with **n8n**. The workflow retrieves restaurant data from Google Maps using the Apify API, cleans and filters the results, removes duplicate records, and stores only unique restaurants in Google Sheets.
+An automated lead generation workflow built with **n8n**. It collects restaurant data from Google Maps using the Apify API, cleans and filters the results, removes duplicates, and stores unique records in Google Sheets. The collected data can be used to identify restaurants that may need a website.
 
 ## Features
 - Automatically collects restaurant data from Google Maps.
