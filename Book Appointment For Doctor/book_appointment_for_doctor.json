@@ -1,0 +1,475 @@
+{
+  "name": "book appointment for doctor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "book-appointment",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        -16
+      ],
+      "id": "3dc95efa-2bb4-43e3-a299-fad5118dda24",
+      "name": "Webhook",
+      "webhookId": "8359ea24-c7e0-4896-b977-11acd3ac62e1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body }}",
+        "options": {
+          "systemMessage": "You are a booking assistant for a doctor's appointment website. You receive appointment requests from a webhook containing: name, phone, email, date, time, and notes.\n\nYour tasks, in order:\n1. Check the connected Calendar tool to see if the requested date and time is already booked or conflicts with an existing event.\n2. If the slot is available:\n   a. Save the booking to Supabase (table: appointments) with fields: name, phone, email, date, time, notes, status = \"confirmed\".\n   b. Create a new event in the Calendar for this appointment.\n   c. Return a success response confirming the booking, including the patient's name, date, and time.\n3. If the slot is NOT available (already booked or conflicting):\n   a. Do NOT save anything to Supabase.\n   b. Return a response indicating the slot is unavailable, and if possible, suggest the nearest available time slot from the Calendar.\n4. Always respond in a clear, structured format (JSON) so the website can display the correct message to the patient.\n\nNever double-book a slot. Always check the Calendar before writing to Supabase."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -192,
+        -16
+      ],
+      "id": "f3c3a256-9584-46b2-9b7d-d1641ee5a6b6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "fatmahussein5057@gmail.com",
+          "mode": "list",
+          "cachedResultName": "fatmahussein5057@gmail.com"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        208
+      ],
+      "id": "5c68cdcb-5676-4e05-a2dc-344b955314c3",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "AfxvogiIzJ8HvlOq",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "fatmahussein5057@gmail.com",
+          "mode": "list",
+          "cachedResultName": "fatmahussein5057@gmail.com"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        208
+      ],
+      "id": "002de41c-440e-4a6e-b392-8f870075e5c3",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "AfxvogiIzJ8HvlOq",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -368,
+        208
+      ],
+      "id": "27335614-79d5-475d-95a7-14ceaca7dcc0",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "V7ytmmzKhp47ayM8",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ضعي هذه العقدة Code بعد AI Agent وقبل عقدة إرسال WhatsApp.\n// هذه النسخة تقرأ output عندما يكون JSON داخل نص، وتتعامل مع appointment_details.\n\nconst input = $input.first().json;\n\n// الاحتفاظ بمعرف الشات إذا كان قادماً من عقدة سابقة.\nlet previous = {};\ntry {\n  previous = $('Find Original Chat').first().json;\n} catch (error) {\n  // إذا كان اسم العقدة مختلفاً، يظل الكود يعمل بدون previous.\n}\n\n// في الصورة، الـ AI Agent يضع النتيجة داخل output.\nlet raw = input.output ?? input.text ?? input.response ?? input;\nlet parsed;\n\nif (typeof raw === 'object' && raw !== null) {\n  parsed = raw;\n} else {\n  let cleaned = String(raw).trim();\n\n  // إزالة علامات Markdown إذا كانت موجودة: ```json ... ```\n  cleaned = cleaned\n    .replace(/^```json\\s*/i, '')\n    .replace(/^```\\s*/i, '')\n    .replace(/\\s*```$/i, '')\n    .replace(/^\"\"\"json\\s*/i, '')\n    .replace(/\\s*\"\"\"$/i, '')\n    .trim();\n\n  try {\n    parsed = JSON.parse(cleaned);\n  } catch (error) {\n    // أحياناً يكون هناك نص قبل JSON؛ نأخذ الجزء بين أول { وآخر }.\n    const start = cleaned.indexOf('{');\n    const end = cleaned.lastIndexOf('}');\n\n    if (start === -1 || end === -1 || end <= start) {\n      throw new Error(`خرج AI Agent ليس JSON صالحاً: ${cleaned}`);\n    }\n\n    try {\n      parsed = JSON.parse(cleaned.slice(start, end + 1));\n    } catch (error2) {\n      throw new Error(`تعذر قراءة JSON من خرج AI Agent: ${cleaned}`);\n    }\n  }\n}\n\n// بعض النماذج تضع التفاصيل داخل appointment_details.\nconst details = parsed.details ?? parsed.appointment_details ?? parsed.booking_details ?? parsed;\n\n\n// دعم الأسماء الإنجليزية والعربية.\nconst name = String(\n  details.name ??\n  details.patient_name ??\n  details.customer_name ??\n  details.client_name ??\n  details.full_name ??\n  parsed.name ??\n  parsed.patient_name ??\n  parsed.customer_name ??\n  parsed['الاسم'] ??\n  parsed['اسم العميل'] ??\n  ''\n).trim();\n\nconst date = String(\n  details.date ??\n  details.appointment_date ??\n  details.booking_date ??\n  details.day ??\n  parsed.date ??\n  parsed.appointment_date ??\n  parsed['التاريخ'] ??\n  parsed['تاريخ الموعد'] ??\n  ''\n).trim();\n\nconst time = String(\n  details.time ??\n  details.appointment_time ??\n  details.booking_time ??\n  parsed.time ??\n  parsed.appointment_time ??\n  parsed['الميعاد'] ??\n  parsed['الوقت'] ??\n  ''\n).trim();\n\nif (!name || !date || !time) {\n  throw new Error(\n    `البيانات ناقصة من AI Agent. تم العثور على: name=\"${name}\", date=\"${date}\", time=\"${time}\". ` +\n    `راجعي أن appointment_details يحتوي name/date/time.`\n  );\n}\n\nconst whatsappMessage =\n  `أهلاً ${name}،\\n\\n` +\n  `تم حجز موعدك بنجاح.\\n` +\n  `الاسم: ${name}\\n` +\n  `التاريخ: ${date}\\n` +\n  `الميعاد: ${time}\\n\\n` +\n  `ننتظرك في الموعد المحدد.`;\n\nreturn [\n  {\n    json: {\n      ...previous,\n      ...input,\n      name,\n      date,\n      time,\n      whatsapp_message: whatsappMessage,\n      text: whatsappMessage,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        -16
+      ],
+      "id": "4cba4f34-7559-4bef-830f-18613d8d6e98",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ==================================================\n// Code in JavaScript1 — الكود الكامل النهائي\n// ==================================================\n// يستخدم النود الموجودة عندكِ حالياً:\n// 1) get data   : للحصول على رقم العميل\n// 2) check list : للحصول على قائمة WhatsApp Chats\n// 3) AI Agent   : للحصول على الاسم والتاريخ والميعاد\n//\n// النتيجة:\n// - يختار chat_id للعميل\n// - ينشئ رسالة التأكيد القديمة\n// - يعرض الوقت مثل: 9:50 صباحاً أو 1:30 مساءً\n// ==================================================\n\n// --------------------------------------------------\n// 1) قراءة رقم العميل من نود get data\n// --------------------------------------------------\nconst customer = $('get data').first().json;\n\nconst rawCustomerPhone = String(\n  customer.phone_number ??\n  customer.id ??\n  ''\n).trim();\n\nif (!rawCustomerPhone) {\n  throw new Error('لم يتم العثور على رقم العميل في نود get data.');\n}\n\n// تحويل رقم العميل إلى صيغة WhatsApp JID.\n// مثال: 01551496294 -> 201551496294@s.whatsapp.net\nfunction toWhatsAppJid(phone) {\n  const value = String(phone).trim();\n\n  if (value.includes('@')) {\n    return value;\n  }\n\n  const digits = value.replace(/\\D/g, '');\n\n  if (!digits) {\n    throw new Error('رقم العميل غير صالح.');\n  }\n\n  const internationalPhone = digits.startsWith('0')\n    ? `20${digits.slice(1)}`\n    : digits.startsWith('20')\n      ? digits\n      : `20${digits}`;\n\n  return `${internationalPhone}@s.whatsapp.net`;\n}\n\nconst customerJid = toWhatsAppJid(rawCustomerPhone);\n\n// --------------------------------------------------\n// 2) اختيار شات العميل من نود check list\n// --------------------------------------------------\nconst chatList = $('check list').first().json;\nconst chats = chatList.items ?? [];\n\n// نبحث عن 1-to-1 chat فقط، وليس Group Chat.\nconst matchingChats = chats.filter((item) => {\n  const sameCustomer = [\n    item.attendee_public_identifier,\n    item.provider_id,\n    item.attendee_provider_id,\n  ].some((value) => String(value ?? '').trim() === customerJid);\n\n  return sameCustomer && Number(item.type) === 0;\n});\n\nif (matchingChats.length === 0) {\n  throw new Error(\n    `لم يتم العثور على Chat موجود للعميل: ${customerJid}`\n  );\n}\n\n// إذا ظهر أكثر من Chat، نختار الأحدث.\nmatchingChats.sort(\n  (a, b) =>\n    new Date(b.timestamp ?? 0).getTime() -\n    new Date(a.timestamp ?? 0).getTime()\n);\n\nconst chat = matchingChats[0];\n\n// --------------------------------------------------\n// 3) قراءة نتيجة AI Agent\n// --------------------------------------------------\nconst aiNode = $('AI Agent').first().json;\nlet rawAIOutput = aiNode.output ?? aiNode.text ?? aiNode.response ?? aiNode;\nlet parsed;\n\nif (typeof rawAIOutput === 'object' && rawAIOutput !== null) {\n  parsed = rawAIOutput;\n} else {\n  let cleaned = String(rawAIOutput)\n    .replace(/^```json\\s*/i, '')\n    .replace(/^```\\s*/i, '')\n    .replace(/\\s*```$/i, '')\n    .trim();\n\n  const start = cleaned.indexOf('{');\n  const end = cleaned.lastIndexOf('}');\n\n  if (start === -1 || end === -1 || end <= start) {\n    throw new Error('خرج AI Agent ليس JSON صالحاً.');\n  }\n\n  try {\n    parsed = JSON.parse(cleaned.slice(start, end + 1));\n  } catch (error) {\n    throw new Error('تعذر قراءة بيانات الحجز من خرج AI Agent.');\n  }\n}\n\n// إذا فشل الحجز، لا نرسل رسالة نجاح.\nif (parsed.status === 'error') {\n  throw new Error(parsed.message ?? 'فشل حجز الموعد في AI Agent.');\n}\n\n// يدعم details وappointment_details وbooking_details.\nconst details =\n  parsed.details ??\n  parsed.appointment_details ??\n  parsed.booking_details ??\n  parsed;\n\nconst name = String(\n  details.name ??\n  details.patient_name ??\n  details.customer_name ??\n  details.client_name ??\n  details.full_name ??\n  ''\n).trim();\n\nconst date = String(\n  details.date ??\n  details.appointment_date ??\n  details.booking_date ??\n  ''\n).trim();\n\nconst rawTime = String(\n  details.time ??\n  details.appointment_time ??\n  details.booking_time ??\n  ''\n).trim();\n\nif (!name || !date || !rawTime) {\n  throw new Error(\n    `بيانات الحجز ناقصة: name=\"${name}\", date=\"${date}\", time=\"${rawTime}\".`\n  );\n}\n\n// --------------------------------------------------\n// 4) تنسيق الوقت: 09:50:00 -> 9:50 صباحاً\n//                    13:30:00 -> 1:30 مساءً\n// --------------------------------------------------\nfunction formatArabicTime(value) {\n  const match = String(value).trim().match(/^(\\d{1,2}):(\\d{2})/);\n\n  // إذا لم يكن الوقت بصيغة HH:mm أو HH:mm:ss، نرجعه كما هو.\n  if (!match) {\n    return String(value).trim();\n  }\n\n  let hour24 = Number(match[1]);\n  const minutes = match[2];\n  const lowerValue = String(value).toLowerCase();\n\n  // يدعم أيضاً مدخلات مثل 9:50 PM أو 9:50 مساءً.\n  const isPM = /\\bpm\\b|مساء/.test(lowerValue);\n  const isAM = /\\bam\\b|صباح/.test(lowerValue);\n\n  if (isPM && hour24 < 12) {\n    hour24 += 12;\n  }\n\n  if (isAM && hour24 === 12) {\n    hour24 = 0;\n  }\n\n  const period = hour24 >= 12 ? 'مساءً' : 'صباحاً';\n  const hour12 = hour24 % 12 || 12;\n\n  return `${hour12}:${minutes} ${period}`;\n}\n\nconst time = formatArabicTime(rawTime);\n\n// --------------------------------------------------\n// 5) نفس رسالة التأكيد القديمة\n// --------------------------------------------------\nconst whatsappMessage =\n  `أهلاً ${name}،\\n\\n` +\n  `تم حجز موعدك بنجاح مع الدكتور.\\n` +\n  `الاسم: ${name}\\n` +\n  `التاريخ: ${date}\\n` +\n  `الميعاد: ${time}\\n\\n` +\n  `ننتظرك في الموعد المحدد.`;\n\n// --------------------------------------------------\n// 6) مخرجات هذه النود لنود إرسال UniPile\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      status: 'success',\n      original_chat_id: chat.id,\n      account_id: chat.account_id,\n      customer_jid: customerJid,\n      name,\n      date,\n      time,\n      whatsapp_message: whatsappMessage,\n      text: whatsappMessage,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -16
+      ],
+      "id": "adda6d28-aea4-40f0-a6ae-20937f388e17",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "tableId": "n8n",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $('Webhook').item.json.body.name }}"
+            },
+            {
+              "fieldId": "phone number",
+              "fieldValue": "={{ $('Webhook').item.json.body.phone }}"
+            },
+            {
+              "fieldId": "date",
+              "fieldValue": "={{ $('Webhook').item.json.body.date }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Webhook').item.json.body.email }}"
+            },
+            {
+              "fieldId": "time",
+              "fieldValue": "={{ $('Webhook').item.json.body.time }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -16
+      ],
+      "id": "0a06ae70-a2b0-452c-85e8-24a6a8b5481a",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ij02wYvHdjm18uj3",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api59.unipile.com:18950/api/v1/users/[{{ $('Webhook').item.json.body.phone }}]@s.whatsapp.net?account_id=YOUR_ACCOUNT_ID",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "YOUR_UNIPILE_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        480,
+        -16
+      ],
+      "id": "78a5a86c-9a94-4707-bdfd-53f3ef19eb27",
+      "name": "get data"
+    },
+    {
+      "parameters": {
+        "url": "https://api59.unipile.com:18950/api/v1/chats?account_type=WHATSAPP&account_id=YOUR_ACCOUNT_ID&limit=250",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "YOUR_UNIPILE_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        656,
+        -16
+      ],
+      "id": "d1527a70-fdf4-4bb3-a245-4ed2005a5876",
+      "name": "check list"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api59.unipile.com:18950/api/v1/chats",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "YOUR_UNIPILE_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "account_id",
+              "value": "YOUR_ACCOUNT_ID"
+            },
+            {
+              "name": "attendees_ids",
+              "value": "={{ $json.customer_jid }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.whatsapp_message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        -16
+      ],
+      "id": "3de38301-eb96-491f-ad37-5b3cfb5dfcca",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n-c1bz.srv1841520.hstgr.cloud",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+            "content-length": "134",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5173--017acfb7.local-credentialless.webcontainer-api.io",
+            "priority": "u=1, i",
+            "referer": "https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5173--017acfb7.local-credentialless.webcontainer-api.io/",
+            "sec-ch-ua": "\"Not=A?Brand\";v=\"99\", \"Microsoft Edge\";v=\"151\", \"Chromium\";v=\"151\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "41.36.180.162",
+            "x-forwarded-host": "n8n-c1bz.srv1841520.hstgr.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "srv1841520",
+            "x-real-ip": "41.36.180.162"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "name": "سلمي محمد",
+            "phone": "01551496294",
+            "email": "fatmahuss678@gmail.com",
+            "date": "2026-08-19",
+            "time": "10:30:00",
+            "notes": null
+          },
+          "webhookUrl": "https://n8n-c1bz.srv1841520.hstgr.cloud/webhook-test/book-appointment",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "AI Agent": [
+      {
+        "json": {
+          "output": "{\n  \"status\": \"success\",\n  \"message\": \"تم تأكيد حجزك بنجاح.\",\n  \"appointment_details\": {\n    \"name\": \"سلمي محمد\",\n    \"date\": \"2026-08-19\",\n    \"time\": \"10:30:00\"\n  }\n}"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Create a row": [
+      {
+        "json": {
+          "name": "سلمي محمد",
+          "date": "2026-08-19",
+          "phone number": "01551496294",
+          "email": "fatmahuss678@gmail.com",
+          "id": 11,
+          "time": "10:30:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "get data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get data": {
+      "main": [
+        [
+          {
+            "node": "check list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check list": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6ad7c86f-a384-4bf3-b250-07f003c878b6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f53a7d353eb7e5751814be14cb9892b7d6cd6bed498fa68fe9b5279f3f77d14e"
+  },
+  "nodeGroups": [],
+  "id": "s1FAEJv6Aff7S9dh",
+  "tags": []
+}
